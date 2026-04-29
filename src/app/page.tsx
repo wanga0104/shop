@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
+import Link from 'next/link';
 
 interface Product {
   id: string;
@@ -98,8 +99,9 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
-              <div
+              <Link
                 key={product.id}
+                href={`/product/${product.id}`}
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="aspect-w-16 aspect-h-9 bg-gray-200">
@@ -124,7 +126,10 @@ export default function Home() {
                       ${product.price.toFixed(2)}
                     </span>
                     <button
-                      onClick={() => addToCart(product.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        addToCart(product.id);
+                      }}
                       disabled={product.stock === 0}
                       className={`flex items-center space-x-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                         product.stock === 0
@@ -142,7 +147,7 @@ export default function Home() {
                     库存: {product.stock} 件
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
