@@ -2,18 +2,12 @@ import ProductDetail from './ProductDetail';
 
 export async function generateStaticParams() {
   return [
-    { id: 'prod-001' },
-    { id: 'prod-002' },
-    { id: 'prod-003' },
-    { id: 'prod-004' },
-    { id: 'prod-005' },
-    { id: 'prod-006' },
-    { id: 'prod-007' },
-    { id: 'prod-008' },
-    { id: 'prod-009' },
-    { id: 'prod-010' },
-    { id: 'prod-011' },
-    { id: 'prod-012' },
+    { id: 'prod_1' },
+    { id: 'prod_2' },
+    { id: 'prod_3' },
+    { id: 'prod_4' },
+    { id: 'prod_5' },
+    { id: 'prod_6' },
   ];
 }
 
