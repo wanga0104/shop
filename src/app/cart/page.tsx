@@ -22,15 +22,21 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [sessionId] = useState(() => {
+  const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('sessionId') || '';
+      return localStorage.getItem('sessionId') || generateSessionId();
     }
-    return '';
+    return 'session_' + Math.random().toString(36).substr(2, 9);
   });
+
+  function generateSessionId() {
+    return 'session_' + Math.random().toString(36).substr(2, 9);
+  }
 
   useEffect(() => {
     if (sessionId) {
+      localStorage.setItem('sessionId', sessionId);
       fetchCartItems();
     }
   }, [sessionId]);
@@ -38,10 +44,16 @@ export default function CartPage() {
   async function fetchCartItems() {
     try {
       const response = await fetch(`/api/cart?sessionId=${sessionId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setCartItems(data);
+      setCartItems(Array.isArray(data) ? data : []);
+      setError(null);
     } catch (error) {
       console.error('Failed to fetch cart items:', error);
+      setError('无法加载购物车，请稍后重试');
+      setCartItems([]);
     } finally {
       setLoading(false);
     }
@@ -132,6 +144,34 @@ export default function CartPage() {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">加载中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar cartCount={0} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-12">
+            <div className="text-red-600 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">出错了</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={fetchCartItems}
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              重试
+            </button>
+            <p className="text-xs text-gray-500 mt-4">
+              Session ID: {sessionId}
+            </p>
           </div>
         </div>
       </div>
