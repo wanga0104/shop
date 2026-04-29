@@ -1,0 +1,10 @@
+name = "shop2-8id"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shop-database"
+database_id = "280abe63-fcc3-431f-9662-7410cadd285d"
+
+[vars]
+ENVIRONMENT = "production"
