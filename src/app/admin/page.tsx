@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { Package, Users, DollarSign, TrendingUp, ArrowLeft } from 'lucide-react';
+import { Package, Users, DollarSign, TrendingUp, ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 interface Order {
@@ -25,8 +25,11 @@ interface OrderItem {
 interface Product {
   id: string;
   name: string;
+  description: string;
   price: number;
+  imageUrl: string;
   stock: number;
+  category: string;
 }
 
 export default function AdminPage() {
@@ -34,6 +37,15 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    description: '',
+    price: '',
+    imageUrl: '',
+    stock: '',
+    category: '',
+  });
 
   useEffect(() => {
     fetchData();
@@ -53,6 +65,63 @@ export default function AdminPage() {
       console.error('Failed to fetch data:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAddProduct(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newProduct.name,
+          description: newProduct.description,
+          price: parseFloat(newProduct.price),
+          imageUrl: newProduct.imageUrl,
+          stock: parseInt(newProduct.stock),
+          category: newProduct.category,
+        }),
+      });
+
+      if (response.ok) {
+        alert('商品添加成功！');
+        setShowAddModal(false);
+        setNewProduct({
+          name: '',
+          description: '',
+          price: '',
+          imageUrl: '',
+          stock: '',
+          category: '',
+        });
+        fetchData();
+      } else {
+        alert('添加失败，请重试');
+      }
+    } catch (error) {
+      console.error('Failed to add product:', error);
+      alert('添加失败，请重试');
+    }
+  }
+
+  async function handleDeleteProduct(productId: string) {
+    if (!confirm('确定要删除这个商品吗？')) return;
+
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('商品删除成功！');
+        fetchData();
+      } else {
+        alert('删除失败，请重试');
+      }
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      alert('删除失败，请重试');
     }
   }
 
@@ -149,6 +218,15 @@ export default function AdminPage() {
               >
                 商品管理
               </button>
+              {activeTab === 'products' && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  添加商品
+                </button>
+              )}
             </nav>
           </div>
 
@@ -236,6 +314,9 @@ export default function AdminPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           状态
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          操作
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -261,6 +342,14 @@ export default function AdminPage() {
                               {product.stock > 0 ? '有货' : '缺货'}
                             </span>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => handleDeleteProduct(product.id)}
+                              className="text-red-600 hover:text-red-900 transition-colors"
+                            >
+                              删除
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -270,6 +359,114 @@ export default function AdminPage() {
             )}
           </div>
         </div>
+
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">添加新商品</h2>
+                <form onSubmit={handleAddProduct} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      商品名称
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newProduct.name}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      商品描述
+                    </label>
+                    <textarea
+                      required
+                      value={newProduct.description}
+                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        价格
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={newProduct.price}
+                        onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        库存
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        value={newProduct.stock}
+                        onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      图片URL
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={newProduct.imageUrl}
+                      onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      商品分类
+                    </label>
+                    <select
+                      required
+                      value={newProduct.category}
+                      onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">请选择分类</option>
+                      <option value="electronics">电子产品</option>
+                      <option value="clothing">服装</option>
+                      <option value="accessories">配件</option>
+                      <option value="home">家居</option>
+                      <option value="sports">运动</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddModal(false)}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      取消
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      添加
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

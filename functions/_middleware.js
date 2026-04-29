@@ -175,6 +175,33 @@ export async function onRequest(context) {
         });
       }
 
+      if (path === 'admin/products' && method === 'POST') {
+        const data = await request.json();
+        const { name, description, price, imageUrl, stock, category } = data;
+        const productId = 'prod_' + crypto.randomUUID().split('-')[0];
+        
+        await env.DB.prepare(`
+          INSERT INTO Product (id, name, description, price, imageUrl, stock, category, createdAt, updatedAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(productId, name, description, price, imageUrl, stock, category).run();
+        
+        return new Response(JSON.stringify({ success: true, id: productId }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (path.startsWith('admin/products/') && method === 'DELETE') {
+        const productId = path.split('admin/products/')[1];
+        
+        await env.DB.prepare(`
+          DELETE FROM Product WHERE id = ?
+        `).bind(productId).run();
+        
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
     } catch (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
