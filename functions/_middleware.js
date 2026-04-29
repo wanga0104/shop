@@ -17,12 +17,27 @@ export async function onRequest(context) {
       if (path === 'cart' && method === 'GET') {
         const sessionId = url.searchParams.get('sessionId');
         const cartItems = await env.DB.prepare(`
-          SELECT ci.*, p.name, p.price, p.imageUrl
+          SELECT ci.*, p.name, p.price, p.imageUrl, p.id as productId
           FROM CartItem ci
           JOIN Product p ON ci.productId = p.id
           WHERE ci.sessionId = ?
         `).bind(sessionId).all();
-        return new Response(JSON.stringify(cartItems.results), {
+
+        const formattedItems = cartItems.results.map(item => ({
+          id: item.id,
+          sessionId: item.sessionId,
+          productId: item.productId,
+          quantity: item.quantity,
+          createdAt: item.createdAt,
+          product: {
+            id: item.productId,
+            name: item.name,
+            price: item.price,
+            imageUrl: item.imageUrl
+          }
+        }));
+
+        return new Response(JSON.stringify(formattedItems), {
           headers: { 'Content-Type': 'application/json' }
         });
       }
